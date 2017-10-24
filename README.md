@@ -8,8 +8,11 @@ It manages your application code and assets, taking care of caching for offline 
 ## Life cycle
 
 On first run it creates a new ServiceWorker instance, or registers with existing one.
+
 Then saves its current configuration into ServiceWorker and fetches all assets specified in microloader.json
+
 On any subsequent run it will first consult with ServiceWorker instance on which configuration of assets to fetch and will always use cache-first strategy for fetching.
+
 The only exception to this are 'index.html' and 'loader*.js' assets, which are always network-first.
 
 ## Usage
