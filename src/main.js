@@ -190,9 +190,19 @@ MicroLoader.loadInitialAssets = function() {
   body.appendChild(includes)
 
   for (let asset of this.state.currentConfig.assets.initial) {
-    let script = document.createElement('script')
-    script.src = versionedAssetName(asset, this.state.currentConfig)
-    includes.appendChild(script)
+    // Process script asset
+    if (asset.endsWith('.js')) {
+      let script = document.createElement('script')
+      script.src = versionedAssetName(asset, this.state.currentConfig)
+      includes.appendChild(script)
+    }
+    // Process style asset
+    if (asset.endsWith('.css')) {
+      let link = document.createElement('link')
+      link.href = versionedAssetName(asset, this.state.currentConfig)
+      link.rel = 'stylesheet'
+      includes.appendChild(link)
+    }
   }
 }
 

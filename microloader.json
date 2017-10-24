@@ -2,7 +2,7 @@
   "loader_version": "0.0.1",
   "app_version": "0.0.1",
   "assets": {
-    "initial": ["app.js"],
+    "initial": ["app.js", "app.css"],
     "runtime": [],
     "universal": []
   }

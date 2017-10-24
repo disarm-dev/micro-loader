@@ -1,6 +1,7 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
+const ExtractTextPlugin = require("extract-text-webpack-plugin")
 const microloaderConfig = require('./microloader.json')
 
 module.exports = [
@@ -31,10 +32,34 @@ module.exports = [
     },
     // Test code
     {
-        entry: './src/app.js',
+        entry: ['./src/app.js'],
         output: {
             filename: 'app' + microloaderConfig['app_version'] + '.js',
             path: path.resolve(__dirname, 'dist')
         }
+    },
+    // Styles
+    {
+        entry: ['./styles/app.css'],
+        output: {
+            filename: 'app' + microloaderConfig['app_version'] + '.css',
+            path: path.resolve(__dirname, 'dist')
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.css$/,
+                    use: ExtractTextPlugin.extract({
+                        use: ['css-loader']
+                    })
+                }
+            ]
+        },
+        plugins: [new ExtractTextPlugin('app' + microloaderConfig['app_version'] + '.css')]
     }
 ]
+
+// module.rules =
+//     [
+//         { test: /\.css$/, use: 'css-loader' }
+//     ]
