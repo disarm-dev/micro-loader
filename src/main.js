@@ -18,7 +18,13 @@ MicroLoader.state = {
   currentConfig: null,
   // When all assets in this array are cached we are ready for offline.
   // Client app can modify this array.
-  requiredAssets: []
+  requiredAssets: [],
+}
+MicroLoader.callbacks = {
+  // Called when MicroLoader gets new readiness report from ServiceWorker
+  onReadinessReport: null,
+  // Called when current configuration is set to new value
+  onCurrentConfigChange: null,
 }
 
 /*
@@ -148,8 +154,8 @@ MicroLoader.registerMessageHandlersForServiceWorkers = function() {
       case 'respondOfflineReadinessFromServiceWorker':
         console.log('[ML] Got offline readiness report from ServiceWorker:', message.payload)
         this.state.offlineReadiness = message.payload.readinessReport
-        if (this.state.onReadinessReport) {
-          this.state.onReadinessReport(message.payload.readinessReport)
+        if (this.callbacks.onReadinessReport) {
+          this.callbacks.onReadinessReport(message.payload.readinessReport)
         }
         break;
       default:
@@ -166,6 +172,9 @@ MicroLoader.importConfig = function(config, setAsCurrent) {
   this.state.configs[config.app_version] = config
   if (!this.state.currentConfig || setAsCurrent) {
     this.state.currentConfig = config
+    if (this.callbacks.onCurrentConfigChange) {
+      this.callbacks.onCurrentConfigChange(config)
+    }
   }
 
   // Clone initial assets into requiredAssets
