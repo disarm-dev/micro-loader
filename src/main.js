@@ -15,7 +15,10 @@ MicroLoader.state = {
   offlinePossible: false,
   // config.app_version => config
   configs: {},
-  currentConfig: null
+  currentConfig: null,
+  // When all assets in this array are cached we are ready for offline.
+  // Client app can modify this array.
+  requiredAssets: []
 }
 
 /*
@@ -100,9 +103,23 @@ MicroLoader.sendConfigsToServiceWorker = function(forceCurrentConfig) {
   We assume that all configs returned this way are already cached by ServiceWorker.
 */
 MicroLoader.askConfigsFromServiceWorker = function() {
-  console.log('[ML] Asking service worker for saved configs.')
+  console.log('[ML] Asking ServiceWorker for saved configs.')
   sendMessageToServiceWorker({
     action: 'askConfigsFromServiceWorker'
+  })
+}
+
+/* 
+  Query ServiceWorker for offline-readiness.
+  We send list of required assets, and expect offline-readiness report to arrive frow ServiceWorker.
+*/
+MicroLoader.askOfflineReadinessFromServiceWorker = function() {
+  console.log('[ML] Asking ServiceWorker for offline readiness with required assets:', this.state.requiredAssets)
+  sendMessageToServiceWorker({
+    action: 'askOfflineReadinessFromServiceWorker',
+    payload: {
+      requiredAssets: this.state.requiredAssets.map(name => versionedAssetName(name, this.state.currentConfig))
+    }
   })
 }
 
@@ -124,6 +141,17 @@ MicroLoader.registerMessageHandlersForServiceWorkers = function() {
         }
         this.loadInitialAssets()
         break;
+      /*
+        Get offline readiness report from ServiceWorker.
+        Calls event handler in state.onReadinessReport with report as argument.
+      */
+      case 'respondOfflineReadinessFromServiceWorker':
+        console.log('[ML] Got offline readiness report from ServiceWorker:', message.payload)
+        this.state.offlineReadiness = message.payload.readinessReport
+        if (this.state.onReadinessReport) {
+          this.state.onReadinessReport(message.payload.readinessReport)
+        }
+        break;
       default:
         console.log('[ML] Got unregistered message from Service Worker:', message)
     }
@@ -139,6 +167,9 @@ MicroLoader.importConfig = function(config, setAsCurrent) {
   if (!this.state.currentConfig || setAsCurrent) {
     this.state.currentConfig = config
   }
+
+  // Clone initial assets into requiredAssets
+  this.state.requiredAssets = this.state.currentConfig.assets.initial.slice(0)
 }
 
 /*
@@ -176,6 +207,25 @@ MicroLoader.setCurrentConfig = function(version) {
   } else {
     console.log('[ML] Version ' + version + ' is not in configs.')
   }
+}
+
+/*
+  Calculate offline-readiness percentage
+*/
+MicroLoader.offlineReadinessPercentage = function() {
+  if (!this.state.offlineReadiness) {
+    return 0
+  }
+
+  let stats = {ready: 0, total: 0}
+  for (let name in this.state.offlineReadiness) {
+    stats.total += 1
+    if (this.state.offlineReadiness[name]) {
+      stats.ready += 1
+    }
+  }
+
+  return stats.ready / stats.total * 100
 }
 
 MicroLoader.start()

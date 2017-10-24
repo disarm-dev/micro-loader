@@ -69,6 +69,39 @@ Worker.handleMessage = function(message, event) {
         }
       })
       break;
+    /*
+      Check cache for all required assets and report back which ones are offline-ready
+    */
+    case 'askOfflineReadinessFromServiceWorker':
+      self.clients.matchAll().then(clients => {
+        for (let client of clients) {
+          if (client.id == event.source.id) {
+            self.caches.open(CACHE_NAME)
+            .then(cache => {
+              return Promise.all(message.payload.requiredAssets.map(name => cache.match(name)))
+            })
+            .then(matches => {
+              let readinessReport = matches.reduce((acc, match) => {
+                let isMatched = false
+                if (match) {
+                  isMatched = true
+                }
+
+                acc.readiness[message.payload.requiredAssets[acc.index]] = isMatched
+                acc.index += 1
+                return acc
+              }, {index: 0, readiness: {}})
+
+              let payload = {
+                readinessReport: readinessReport.readiness
+              }
+              console.log('[SW] Sending matches to client', payload)
+              client.postMessage({action: 'respondOfflineReadinessFromServiceWorker', payload: payload})
+            })
+          }
+        }
+      })
+      break;
     default:
       console.log('[SW] Got unregistered message from client:', message)
   }
@@ -99,14 +132,16 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   console.log('[SW] Fetching from:', event.request.url)
   // Try to update loader first. If request fails, we return cached version
-  if (Worker.state.currentConfig && event.request.url.endsWith(versionedLoaderName(LOADER_SCRIPT_NAME, Worker.state.currentConfig))) {
+  if (shouldFetchFirst(event.request.url)) {
+    console.log('[SW] Attempting to fetch first.')
     event.respondWith(fetch(event.request).catch(err => {
+      console.log('[SW] Fetch failed. Serving from cache.')
       return fromCache(event.request)
     }))
   } else {
+    console.log('[SW] Serving from cache.')
     event.respondWith(fromCache(event.request))
   }
-
 })
 
 //
@@ -134,6 +169,20 @@ function generateCacheMatchersFromConfig(config) {
   let universal = config.assets.universal
 
   return loader.concat(initial).concat(runtime).concat(universal)
+}
+
+/*
+  index.html and loader.js should be accessed with network-first strategy.
+  Everything else is cache-first.
+*/
+function shouldFetchFirst(uri) {
+  const url = new URL(uri)
+  const loaderScriptName = '/' + LOADER_SCRIPT_NAME.split('.')[0]
+  if (url.pathname == '/' || url.pathname.startsWith(loaderScriptName)) {
+    return true
+  } else {
+    return false
+  }
 }
 
 function fromCache(request) {
