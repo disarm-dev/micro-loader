@@ -1,22 +1,14 @@
 {
-  "name": "micro-loader",
-  "version": "1.0.0",
-  "description": "Tiny caching library",
+  "name": "@locational/micro-loader",
+  "version": "0.0.1",
+  "description": "Tiny application caching library",
   "main": "src/main.js",
   "scripts": {
     "build": "webpack",
     "server": "webpack-dev-server"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@gitlab.com/disarm/micro-loader.git"
-  },
   "author": "DiSARM team",
   "license": "ISC",
-  "bugs": {
-    "url": "https://gitlab.com/disarm/micro-loader/issues"
-  },
-  "homepage": "https://gitlab.com/disarm/micro-loader#README",
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.17",
     "css-loader": "^0.28.7",
