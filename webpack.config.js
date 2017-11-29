@@ -9,7 +9,7 @@ module.exports = [
     {
         entry: './src/main.js',
         output: {
-            filename: 'loader' + microloaderConfig['loader_version'] + '.js',
+            filename: 'loader.js',
             path: path.resolve(__dirname, 'dist')
         },
         plugins: [

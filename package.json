@@ -2,7 +2,7 @@
   "name": "@locational/micro-loader",
   "version": "0.0.1",
   "description": "Tiny application caching library",
-  "main": "src/main.js",
+  "main": "dist/loader.js",
   "scripts": {
     "build": "webpack",
     "server": "webpack-dev-server"
